@@ -1,0 +1,70 @@
+#! /usr/bin/env bash
+
+# Bash "Strict" mode, fail on first error, fail if a variable is missing.
+# set -o errexit
+set -o nounset
+
+echo "Installing dependencies, if needed."
+# from https://github.com/pyenv/pyenv/wiki/Common-build-problems#requirements
+sudo apt-get update
+sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+     xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
+
+echo "installing pyenv..."
+# from https://github.com/pyenv/pyenv-installer
+curl https://pyenv.run | bash
+
+# Guess the user shell so we know what file to re-source occasionally
+if [ "${SHELL}" = '/bin/zsh' ]
+then
+    echo "re-sourcing ~/.zshrc"
+    RC_FILE=${HOME}/.zshrc
+elif [ "${SHELL}" = '/bin/bash' ]
+then
+    echo "re-sourcing ~/.bashrc"
+    RC_FILE=${HOME}/.bashrc
+else
+    echo "are you some weirdo running fish?"
+    exit -1
+fi
+
+# python builds should be shared library otherwise linking gets stupid.
+echo 'PYTHON_CONFIGURE_OPTS="--enable-shared"' >> "${RC_FILE}"
+source "${RC_FILE}"
+
+# install at least one good python
+echo "installing latest python"
+pyenv update
+pyenv install 3.7.4
+
+# set it as the default python
+pyenv global 3.7.4
+
+# refresh the shims so they point to the right place
+pyenv rehash
+
+# pipx automates installing python cli utils into their own venvs
+echo "installing pipx"
+python -m pip install wheel pipx
+
+# make sure ${HOME}/.local/bin is on the path
+pipx ensurepath
+
+# no more `pip install` outside a venv, suckers!
+echo "disabling global pip"
+echo 'PIP_REQUIRE_VIRTUALENV=1' >> "${RC_FILE}"
+source "${RC_FILE}"
+
+# install a bunch of linters and autoformatter utils.
+echo "installing common tools"
+pipx install virtualenv
+pipx install black
+pipx install mypy
+pipx install pydocstyle
+pipx install pycodestyle
+pipx install pre-commit
+pipx install ipython
+pipx install pylint
+# pipx inject ipython attrs pendulum numpy pandas requests
+
