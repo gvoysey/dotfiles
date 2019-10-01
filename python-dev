@@ -31,13 +31,15 @@ fi
 
 # python builds should be shared library otherwise linking gets stupid.
 echo 'PYTHON_CONFIGURE_OPTS="--enable-shared"' >> "${RC_FILE}"
-source "${RC_FILE}"
-
+echo '********* debug: pre source env'
+env
+. "${RC_FILE}"
+echo '********* debug: post source env'
+env
 # install at least one good python
 echo "installing latest python"
 pyenv update
 pyenv install 3.7.4
-
 # set it as the default python
 pyenv global 3.7.4
 
@@ -54,7 +56,7 @@ pipx ensurepath
 # no more `pip install` outside a venv, suckers!
 echo "disabling global pip"
 echo 'PIP_REQUIRE_VIRTUALENV=1' >> "${RC_FILE}"
-source "${RC_FILE}"
+. "${RC_FILE}"
 
 # install a bunch of linters and autoformatter utils.
 echo "installing common tools"
