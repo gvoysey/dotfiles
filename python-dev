@@ -4,12 +4,31 @@
 # set -o errexit
 set -o nounset
 
-echo "Installing dependencies, if needed."
-# from https://github.com/pyenv/pyenv/wiki/Common-build-problems#requirements
-sudo apt-get update
-sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
-     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-     xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
+# argument parsing
+INSTALL_DEPS=0
+for i in "$@"
+do
+    case $i in
+        -i|--install-deps)
+            INSTALL_DEPS=1
+            ;;
+        -h|--help)
+            echo "python-dev -i|--install-deps : install build requirements (you will be prompted for sudo rights)"
+            ;;
+    esac
+done
+
+if [ INSTALL_DEPS == 1 ];
+then
+    echo "Installing dependencies, if needed."
+    # from https://github.com/pyenv/pyenv/wiki/Common-build-problems#requirements
+    sudo apt-get update
+    sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+         xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
+else
+    echo "Assuming build deps are installed (run with -i or --install-deps if this isn't true.)"
+fi
 
 echo "installing pyenv..."
 # from https://github.com/pyenv/pyenv-installer
@@ -31,11 +50,11 @@ fi
 
 # python builds should be shared library otherwise linking gets stupid.
 echo 'PYTHON_CONFIGURE_OPTS="--enable-shared"' >> "${RC_FILE}"
-echo '********* debug: pre source env'
-env
+
+env > presourceenv.txt
 . "${RC_FILE}"
-echo '********* debug: post source env'
-env
+
+env > postsourceenv.txt
 # install at least one good python
 echo "installing latest python"
 pyenv update
